@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background: #121212;
+      background: #0d1117;
       color: #fff;
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
@@ -24,6 +24,14 @@
       margin-top: 30px;
       color: #ffaa00;
       font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .icon {
+      font-size: 1.5rem;
     }
 
     .grid {
@@ -35,16 +43,19 @@
     }
 
     .led-button {
-      padding: 16px;
+      padding: 14px;
       border: none;
       border-radius: 12px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
       color: white;
       cursor: pointer;
       background: linear-gradient(145deg, #00ffcc, #00bfa5);
       box-shadow: 0 0 15px #00ffcc55;
       transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .led-button:hover {
@@ -57,15 +68,45 @@
       box-shadow: 0 0 20px #ffaa00aa;
     }
 
+    .status-icon {
+      font-size: 1.1rem;
+      margin-top: 6px;
+    }
+
     @media (max-width: 600px) {
       h1, h2 {
         font-size: 1.3rem;
       }
 
       .led-button {
-        padding: 14px;
-        font-size: 13px;
+        padding: 12px;
+        font-size: 12px;
       }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #28a745;
+    }
+
+    .toast.error {
+      background: #dc3545;
     }
   </style>
 </head>
@@ -73,14 +114,16 @@
 
   <h1>ESP32 LED Control Dashboard</h1>
 
-  <h2>Hospital LEDs</h2>
+  <h2><span class="icon">🏥</span> Hospital LEDs</h2>
   <div class="grid" id="hospitalGrid"></div>
 
-  <h2>ISRO LEDs</h2>
+  <h2><span class="icon">🚀</span> ISRO LEDs</h2>
   <div class="grid" id="isroGrid"></div>
 
-  <h2>Others</h2>
+  <h2><span class="icon">✨</span> Others</h2>
   <div class="grid" id="othersGrid"></div>
+
+  <div id="toast" class="toast"></div>
 
   <script>
     const ESP32_IP = 'http://YOUR_ESP32_IP_HERE';
@@ -92,28 +135,38 @@
         const ledNumber = i + offset;
         const btn = document.createElement('button');
         btn.className = 'led-button';
-        btn.innerText = `LED ${ledNumber}`;
+        btn.innerHTML = `LED ${ledNumber} <span class="status-icon"></span>`;
         btn.dataset.led = ledNumber;
         btn.dataset.state = 'off';
 
         btn.onclick = () => {
           const newState = btn.dataset.state === 'off' ? 'on' : 'off';
+          const icon = newState === 'on' ? '💡' : '';
+          const action = newState === 'on' ? 'Turn Off' : 'Turn On';
 
           btn.dataset.state = newState;
           btn.classList.toggle('on', newState === 'on');
+          btn.innerHTML = `LED ${ledNumber} <span class="status-icon">${icon}</span>`;
 
           fetch(`${ESP32_IP}/led?pin=${ledNumber}&state=${newState}`)
-            .then(res => console.log(`LED ${ledNumber} ${newState}`))
-            .catch(err => console.error('ESP32 Error:', err));
+            .then(res => showToast(`LED ${ledNumber} turned ${newState}`, 'success'))
+            .catch(err => showToast('Error talking to ESP32', 'error'));
         };
 
         container.appendChild(btn);
       }
     }
 
-    createLEDButtons(6, 0, 'hospitalGrid');  // LEDs 1-6 for Hospital
-    createLEDButtons(4, 6, 'isroGrid');      // LEDs 7-10 for ISRO
-    createLEDButtons(5, 10, 'othersGrid');   // LEDs 11-15 for Others
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.className = 'toast', 2500);
+    }
+
+    createLEDButtons(6, 0, 'hospitalGrid');   // LEDs 1-6 for Hospital
+    createLEDButtons(4, 6, 'isroGrid');       // LEDs 7-10 for ISRO
+    createLEDButtons(5, 10, 'othersGrid');    // LEDs 11-15 for Others
   </script>
 
 </body>
