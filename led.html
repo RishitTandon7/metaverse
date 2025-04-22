@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 LED Controller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      color: #00ffcc;
+      font-size: 1.8rem;
+    }
+
+    h2 {
+      margin-top: 30px;
+      color: #ffaa00;
+      font-size: 1.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 15px;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .led-button {
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      background: linear-gradient(145deg, #00ffcc, #00bfa5);
+      box-shadow: 0 0 15px #00ffcc55;
+      transition: all 0.3s ease;
+    }
+
+    .led-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px #00ffccaa;
+    }
+
+    .on {
+      background: linear-gradient(145deg, #ffd700, #ff8c00);
+      box-shadow: 0 0 20px #ffaa00aa;
+    }
+
+    @media (max-width: 600px) {
+      h1, h2 {
+        font-size: 1.3rem;
+      }
+
+      .led-button {
+        padding: 14px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ESP32 LED Control Dashboard</h1>
+
+  <h2>Hospital LEDs</h2>
+  <div class="grid" id="hospitalGrid"></div>
+
+  <h2>ISRO LEDs</h2>
+  <div class="grid" id="isroGrid"></div>
+
+  <h2>Others</h2>
+  <div class="grid" id="othersGrid"></div>
+
+  <script>
+    const ESP32_IP = 'http://YOUR_ESP32_IP_HERE';
+
+    function createLEDButtons(count, offset, containerId) {
+      const container = document.getElementById(containerId);
+
+      for (let i = 1; i <= count; i++) {
+        const ledNumber = i + offset;
+        const btn = document.createElement('button');
+        btn.className = 'led-button';
+        btn.innerText = `LED ${ledNumber}`;
+        btn.dataset.led = ledNumber;
+        btn.dataset.state = 'off';
+
+        btn.onclick = () => {
+          const newState = btn.dataset.state === 'off' ? 'on' : 'off';
+
+          btn.dataset.state = newState;
+          btn.classList.toggle('on', newState === 'on');
+
+          fetch(`${ESP32_IP}/led?pin=${ledNumber}&state=${newState}`)
+            .then(res => console.log(`LED ${ledNumber} ${newState}`))
+            .catch(err => console.error('ESP32 Error:', err));
+        };
+
+        container.appendChild(btn);
+      }
+    }
+
+    createLEDButtons(6, 0, 'hospitalGrid');  // LEDs 1-6 for Hospital
+    createLEDButtons(4, 6, 'isroGrid');      // LEDs 7-10 for ISRO
+    createLEDButtons(5, 10, 'othersGrid');   // LEDs 11-15 for Others
+  </script>
+
+</body>
+</html>
